@@ -5,6 +5,8 @@ from kivy.uix.image import Image
 from kivy.uix.button import Button
 from kivy.uix.textinput import TextInput
 
+from bot_interface import BotInterface
+
 
 class Instagram_Bot(App):
     def __init__(self):
@@ -79,7 +81,9 @@ class Instagram_Bot(App):
         username = self.username_input.text
         password = self.password_input.text
         profile_name = self.profile_input.text
-        print("start bot", username)
+        bot = BotInterface(username, password, profile_name)
+        bot.start()
+        print("start bot")
 
 
 if __name__ == "__main__":
