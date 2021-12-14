@@ -1,8 +1,7 @@
 from abc import ABC
-from time import sleep
 from bs4 import BeautifulSoup
 from selenium.webdriver.common.by import By
-import re
+
 
 class Page(ABC):
     def __init__(self, browser, url):
@@ -26,7 +25,7 @@ class LoginPage(Page):
         password_input = self.browser.find_element(By.CSS_SELECTOR, "input[name='password']")
         username_input.send_keys(username)
         password_input.send_keys(password)
-        sleep(2)
+        self.browser.implicitly_wait(2)
         password_input.submit()
         # return page object for the new page
         return self.browser
@@ -38,26 +37,27 @@ class StartPage(Page):
 
     def search_profile(self, profile_name):
         # click away pop up questions about login and notifications
-        sleep(3)
+        self.browser.implicitly_wait(3)
         button_not_now = self.browser.find_elements_by_xpath("//*[contains(text(), 'Not Now')]")
         button_not_now[0].click()
-        sleep(1)
+        self.browser.implicitly_wait(1)
         button_not_now = self.browser.find_elements_by_xpath("//*[contains(text(), 'Not Now')]")
         button_not_now[0].click()
-        sleep(1)
+        self.browser.implicitly_wait(1)
         # go to profile url
         url_profile = self.url + profile_name
         self.browser.get(url_profile)
 
-        sleep(2)
+        self.browser.implicitly_wait(1)
         return self.browser
 
 
 class ProfilePage(Page):
     def __init__(self, browser, url):
         super().__init__(browser, url)
+        self.amount_of_liked_images = 0
 
-    def get_posts(self, profile_name):
+    def like_posts(self, update_liked_images):
         soup = BeautifulSoup(self.browser.page_source, "html.parser")
         all_post_urls = []
         # get all post urls
@@ -69,16 +69,16 @@ class ProfilePage(Page):
                 if href[1] == "p":
                     all_post_urls.append(href)
 
-        print("anzahl posts:", len(all_post_urls))
+        print("amount of posts:", len(all_post_urls))
+
         for post_url in all_post_urls:
             url = self.url + post_url
             self.like_image(url)
-
-        return self.browser
+            update_liked_images(self.amount_of_liked_images)
 
     def like_image(self, url):
         self.browser.get(url)
-        sleep(2)
+        self.browser.implicitly_wait(2)
         # check if post was already liked (aria label is Like or Unlike
         # TODO condition not correct, check color of all found svg elements
         svg_like = self.browser.find_elements_by_xpath("//*[name()='svg'][@aria-label='Like']")
@@ -88,5 +88,4 @@ class ProfilePage(Page):
             xpath = "//*[@class='fr66n']"
             like_button = self.browser.find_element(By.XPATH, xpath)
             like_button.click()
-            print("liked")
-            #print(like_button)
+            self.amount_of_liked_images += 1
